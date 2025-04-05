@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Your App</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --error-color: #ff4a4a;
+      --text-color: #333;
+      --light-text: #777;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: #f9fafb;
+    }
+    
+
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      margin-top: 50px;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    .welcome-message {
+      color: var(--light-text);
+      margin-top: 0.5rem;
+    }
+    
+    .alert {
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: var(--border-radius);
+    }
+    
+    .alert-error {
+      background-color: #ffebee;
+      color: var(--error-color);
+      border-left: 4px solid var(--error-color);
+    }
+    
+    .blog-form {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 3rem;
+    }
+    
+    .blog-list {
+      margin-top: 2rem;
+    }
+    
+    .blog-item {
+      background: white;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    input[type="text"],
+    input[type="url"],
+    textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.2);
+    }
+    
+    textarea {
+      min-height: 200px;
+      resize: vertical;
+    }
+    
+    .btn {
+      padding: 0.8rem 1.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+      background-color: #3a5bef;
+      transform: translateY(-1px);
+    }
+    
+    .delete-btn {
+      background-color: var(--error-color);
+      margin-top: 1rem;
+    }
+    
+    .delete-btn:hover {
+      background-color: #d32f2f;
+    }
+    
+    .blog-image {
+      max-width: 100%;
+      height: auto;
+      margin: 1rem 0;
+      border-radius: var(--border-radius);
+    }
+    
+    .blog-date {
+      color: var(--light-text);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      color: var(--light-text);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .blog-form,
+      .blog-item {
+        padding: 1.5rem;
+      }
+      .header{
+        margin-top: 40px;
+      }
+      .header h1{
+        font-size: 18px;
+      }
+      .header p{
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/navbar', { isAuthenticated: true }) %>
+  
+  <div class="container">
+    <header class="header">
+      <h1>Welcome back, <%= user.name %>!</h1>
+      <p class="welcome-message">You're logged in as <%= user.email %></p>
+    </header>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <section class="blog-form">
+      <h2>Create New Blog Post</h2>
+      <form action="/user/blogs" method="POST">
+        <input type="hidden" name="_csrf" id="csrftokenelement" value="<%= csrfToken %>">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="imageUrl">Image URL (optional)</label>
+          <input type="url" id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg">
+        </div>
+        
+        <div class="form-group">
+          <label for="content">Content</label>
+          <textarea id="content" name="content" required></textarea>
+        </div>
+        
+        <button type="submit" class="btn">Publish Blog</button>
+      </form>
+    </section>
+
+    <section class="blog-list">
+      <h2>Your Blog Posts</h2>
+      
+      <% if (blogs.length === 0) { %>
+        <div class="empty-state">
+          <p>You haven't published any blog posts yet.</p>
+          <p>Get started by creating your first post above!</p>
+        </div>
+      <% } else { %>
+        <% blogs.forEach(blog => { %>
+          <article class="blog-item" id="blog-<%= blog.id %>">
+            <h3><%= blog.title %></h3>
+            
+            <% if (blog.imageUrl) { %>
+              <img src="<%= blog.imageUrl %>" alt="Blog image" class="blog-image">
+            <% } %>
+            
+            <p><%= blog.content %></p>
+            <p class="blog-date">Posted on: <%= new Date(blog.createdAt).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) %></p>
+            
+            <form action="/user/blogs/<%= blog.id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this blog post?')">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn delete-btn">Delete Post</button>
+            </form>
+          </article>
+        <% }) %>
+      <% } %>
+    </section>
+  </div>
+
+  <%- include('../partials/footer')%>
+</body>
+</html>

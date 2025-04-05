@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= error.status %> Error | BlogApp</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --error-color: #ff4a4a;
+      --text-color: #333;
+      --light-text: #777;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+   
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .error-container {
+      background: white;
+      padding: 3rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .error-code {
+      font-size: 5rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+    
+    .error-message {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+    }
+    
+    .error-description {
+      color: var(--light-text);
+      margin-bottom: 2rem;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+      background-color: #3a5bef;
+      transform: translateY(-2px);
+    }
+    
+    .error-details {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      color: var(--light-text);
+      font-size: 0.9rem;
+      text-align: left;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .error-container {
+        padding: 2rem 1.5rem;
+      }
+      
+      .error-code {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/navbar', { isAuthenticated: typeof isAuthenticated !== 'undefined' ? isAuthenticated : false, user: typeof user !== 'undefined' ? user : null }) %>
+  
+  <div class="container">
+    <div class="error-container">
+      <div class="error-code"><%= error.status %></div>
+      <h1 class="error-message"><%= message %></h1>
+      <p class="error-description">
+        <% if (error.status === 404) { %>
+          The page you're looking for doesn't exist or has been moved.
+        <% } else if (error.status === 403) { %>
+          You don't have permission to access this resource.
+        <% } else { %>
+          Something went wrong on our end. We're working to fix it.
+        <% } %>
+      </p>
+      <a href="/" class="btn">Return to Homepage</a>
+      
+      <% if (process.env.NODE_ENV === 'development' && error.stack) { %>
+        <div class="error-details">
+          <h3>Development Error Details:</h3>
+          <pre><%= error.stack %></pre>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
