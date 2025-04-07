@@ -3,9 +3,11 @@ const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const session = require("express-session");
 const csrf = require("csurf");
+const { generateCaptcha, verifyCaptcha } = require("../util/captcha");
 const csrfProtection = csrf({ cookie: true });
 const router = express.Router();
 const prisma = new PrismaClient();
+
 
 // Middleware to Check Authentication
 const isAuthenticated = (req, res, next) => {
@@ -14,26 +16,49 @@ const isAuthenticated = (req, res, next) => {
 };
 
 // ✅ Register Route
-router.get("/user/register", csrfProtection,(req, res) => {
+router.get("/user/register", csrfProtection, (req, res) => {
+    const captcha = generateCaptcha();
+    
     res.render("user/register", { 
         message: null,
         isAuthenticated: !!req.session.user,
         title: "Register",
         csrfToken: req.csrfToken(),
+        captchaId: captcha.id,
+        captchaImage: captcha.imageUrl,
+        formData:null
     });
 });
 
-router.post("/user/register", async (req, res) => {
-    const { name, email, password } = req.body;
+router.post("/user/register", csrfProtection, async (req, res) => {
+    const { name, email, password, captchaInput, captchaId } = req.body;
+    
+    // Verify CAPTCHA first
+    if (!verifyCaptcha(captchaId, captchaInput)) {
+        const newCaptcha = generateCaptcha();
+        return res.render("user/register", { 
+            message: "CAPTCHA verification failed",
+            formData: req.body,
+            isAuthenticated: !!req.session.user,
+            title: "Register",
+            csrfToken: req.csrfToken(),
+            captchaId: newCaptcha.id,
+            captchaImage: newCaptcha.imageUrl
+        });
+    }
 
     try {
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
+            const newCaptcha = generateCaptcha();
             return res.render("user/register", { 
                 message: "User already exists",
                 formData: req.body,
                 isAuthenticated: !!req.session.user,
-                title: "Register"
+                title: "Register",
+                csrfToken: req.csrfToken(),
+                captchaId: newCaptcha.id,
+                captchaImage: newCaptcha.imageUrl
             });
         }
 
@@ -49,58 +74,94 @@ router.post("/user/register", async (req, res) => {
         res.redirect("/user/login");
     } catch (error) {
         console.error("Registration error:", error);
+        const newCaptcha = generateCaptcha();
         res.render("user/register", { 
             message: "Registration failed. Please try again.",
             formData: req.body,
             isAuthenticated: !!req.session.user,
-            title: "Register"
+            title: "Register",
+            csrfToken: req.csrfToken(),
+            captchaId: newCaptcha.id,
+            captchaImage: newCaptcha.imageUrl
         });
     }
 });
 
 // ✅ Login Route
 router.get("/user/login",csrfProtection, (req, res) => {
+    const captcha = generateCaptcha();
+    
     res.render("user/login", { 
-        csrfToken : req.csrfToken(),
+        csrfToken: req.csrfToken(),
         message: null,
         isAuthenticated: !!req.session.user,
         title: "Login",
+        captchaId: captcha.id,
+        captchaImage: captcha.imageUrl
     });
 });
 
-router.post("/user/login",async (req, res) => {
-    const { email, password } = req.body;
+router.post("/user/login", csrfProtection, async (req, res) => {
+    const { email, password, captchaInput, captchaId } = req.body;
+    console.log(req.body);
+    
+    if (!verifyCaptcha(captchaId, captchaInput)) {
+        const newCaptcha = generateCaptcha();
+        return res.render("user/login", {
+            csrfToken: req.csrfToken(), // Add this line
+            message: "CAPTCHA verification failed",
+            captchaId: newCaptcha.id,
+            captchaImage: newCaptcha.imageUrl,
+            isAuthenticated: !!req.session.user,
+            title: "Login"
+        });
+    }
 
     try {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
+            const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
+                csrfToken: req.csrfToken(), // Add this line
                 message: "Invalid credentials",
                 formData: req.body,
                 isAuthenticated: !!req.session.user,
-                title: "Login"
+                title: "Login",
+                captchaId: newCaptcha.id,
+                captchaImage: newCaptcha.imageUrl
             });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
+                csrfToken: req.csrfToken(), // Add this line
                 message: "Invalid credentials",
                 formData: req.body,
                 isAuthenticated: !!req.session.user,
-                title: "Login"
+                title: "Login",
+                captchaId: newCaptcha.id,
+                captchaImage: newCaptcha.imageUrl
             });
         }
 
         req.session.user = user;
-        res.redirect("/user/dashboard");
+        req.session.user = user;
+        req.session.pinVerified = false; // Reset PIN verification
+        res.redirect("/user/login/pin"); 
+
     } catch (error) {
         console.error("Login error:", error);
+        const newCaptcha = generateCaptcha();
         res.render("user/login", { 
+            csrfToken: req.csrfToken(), // Add this line
             message: "Login failed. Please try again.",
             formData: req.body,
             isAuthenticated: !!req.session.user,
-            title: "Login"
+            title: "Login",
+            captchaId: newCaptcha.id,
+            captchaImage: newCaptcha.imageUrl
         });
     }
 });
@@ -194,6 +255,56 @@ router.get("/", async (req, res) => {
             isAuthenticated: !!req.session.user,
             title: "Home",
             error: "Failed to load blogs"
+        });
+    }
+});
+
+router.get('/captcha/refresh', csrfProtection, (req, res) => {
+    try {
+        const captcha = generateCaptcha();
+        res.json({
+            id: captcha.id,
+            imagePath: captcha.imageUrl
+        });
+    } catch (error) {
+        console.error('CAPTCHA refresh error:', error);
+        res.status(500).json({ error: 'Failed to refresh CAPTCHA' });
+    }
+});
+
+router.get('/user/login/pin',isAuthenticated, csrfProtection, (req,res)=>{
+    if (req.session.pinVerified) {
+        return res.redirect("/user/dashboard");
+    }
+
+    res.render('pin',{
+        csrfToken: req.csrfToken(),
+        title: "PIN",
+        isAuthenticated: true,
+        message:""
+    })
+})
+
+router.post("/user/verify-pin", isAuthenticated, csrfProtection, async (req, res) => {
+    const { pin } = req.body;
+    const user = req.session.user;
+
+    try {
+      if(!user){
+        res.redirect('user/login');
+      }
+    
+
+        // Mark PIN as verified in session
+        req.session.pinVerified = true;
+        res.redirect("/user/dashboard");
+    } catch (error) {
+        console.error("PIN verification error:", error);
+        res.render("user/verify-pin", {
+            csrfToken: req.csrfToken(),
+            isAuthenticated: true,
+            title: "Verify PIN",
+            message: "Error verifying PIN. Please try again."
         });
     }
 });

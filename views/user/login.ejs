@@ -6,7 +6,7 @@
     <title>Login | Your Application</title>
     <style>
         :root {
-            --primary-color: #4a6bff;
+            --primary-color: #FF6201;
             --secondary-color: #f5f7ff;
             --error-color: #ff4a4a;
             --text-color: #333;
@@ -40,7 +40,7 @@
             width: 100%;
             max-width: 420px;
             margin: 1rem;
-            margin-top: 85px;
+            margin-top: 100px;
         }
         
         .login-header {
@@ -99,7 +99,7 @@
         }
         
         .btn:hover {
-            background-color: #3a5bef;
+            background-color: #a33f00;
         }
         
         .message {
@@ -136,51 +136,41 @@
             text-decoration: underline;
         }
         
-        .divider {
-            display: flex;
-            align-items: center;
+        /* New CAPTCHA styles */
+        .captcha-container {
             margin: 1.5rem 0;
-            color: var(--light-text);
-            font-size: 0.8rem;
+            text-align: center;
         }
         
-        .divider::before, .divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .divider::before {
-            margin-right: 1rem;
-        }
-        
-        .divider::after {
-            margin-left: 1rem;
-        }
-        
-        .social-login {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .social-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: white;
+        .captcha-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            box-shadow: var(--box-shadow);
             border: 1px solid #ddd;
-            cursor: pointer;
-            transition: all 0.3s ease;
         }
         
-        .social-btn:hover {
-            background: #f5f5f5;
-            transform: translateY(-2px);
+        .captcha-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 0.2rem;
+        }
+        
+        .captcha-refresh {
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        
+        .captcha-refresh:hover {
+            text-decoration: underline;
         }
         
         @media (max-width: 480px) {
@@ -206,9 +196,11 @@
         
         <form action="/user/login" method="POST">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="captchaId" value="<%= captchaId %>">
+            
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required>
+                <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required">
             </div>
             
             <div class="form-group">
@@ -216,13 +208,35 @@
                 <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
             </div>
             
+            <!-- CAPTCHA Section -->
+            <div class="form-group">
+                <label>CAPTCHA Verification</label>
+                <div class="captcha-container">
+                    <img src="<%= captchaImage %>" alt="CAPTCHA" class="captcha-image">
+                    <input type="text" name="captchaInput" class="form-control captcha-input" placeholder="Enter the text you see" required>
+                    <div class="captcha-refresh" onclick="refreshCaptcha()">Refresh CAPTCHA</div>
+                </div>
+            </div>
+            
             <button type="submit" class="btn">Login</button>
         </form>
+    
         
         <div class="footer-links">
-            
             <a href="/user/register">Create an account</a>
         </div>
     </div>
+
+    <script>
+        function refreshCaptcha() {
+            fetch('/captcha/refresh')
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector('.captcha-image').src = data.imagePath;
+                    document.querySelector('input[name="captchaId"]').value = data.id;
+                })
+                .catch(error => console.error('Error refreshing CAPTCHA:', error));
+        }
+    </script>
 </body>
 </html>

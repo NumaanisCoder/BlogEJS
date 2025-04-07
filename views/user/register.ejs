@@ -6,7 +6,7 @@
     <title>Create Account | Your Application</title>
     <style>
         :root {
-            --primary-color: #4a6bff;
+            --primary-color: #FF6201;
             --secondary-color: #f5f7ff;
             --error-color: #ff4a4a;
             --success-color: #2e7d32;
@@ -109,6 +109,44 @@
             display: none;
         }
         
+        /* CAPTCHA Styles */
+        .captcha-container {
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        
+        .captcha-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            box-shadow: var(--box-shadow);
+            border: 1px solid #ddd;
+        }
+        
+        .captcha-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 0.2rem;
+    
+        }
+        
+        .captcha-refresh {
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        
+        .captcha-refresh:hover {
+            text-decoration: underline;
+        }
+        
         .btn {
             width: 100%;
             padding: 0.9rem;
@@ -123,7 +161,7 @@
         }
         
         .btn:hover {
-            background-color: #3a5bef;
+            background-color: #a33f00;
             transform: translateY(-1px);
         }
         
@@ -196,14 +234,18 @@
         
         <form action="/user/register" method="POST" id="registerForm">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="captchaId" value="<%= captchaId %>">
+            
             <div class="form-group">
                 <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" class="form-control" placeholder="John Doe" required>
+                <input type="text" id="name" name="name" class="form-control" placeholder="John Doe" required
+                       value="<%= formData && formData.name %>">
             </div>
             
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required>
+                <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required
+                       value="<%= formData && formData.email %>">
             </div>
             
             <div class="form-group">
@@ -214,6 +256,16 @@
                 </div>
                 <div class="password-hint" id="passwordHint">
                     Use 8+ characters with a mix of letters, numbers & symbols
+                </div>
+            </div>
+            
+            <!-- CAPTCHA Section -->
+            <div class="form-group">
+                <label>CAPTCHA Verification</label>
+                <div class="captcha-container">
+                    <img src="<%= captchaImage %>" alt="CAPTCHA" class="captcha-image">
+                    <input type="text" name="captchaInput" class="form-control captcha-input" placeholder="Enter the text you see" required>
+                    <div class="captcha-refresh" onclick="refreshCaptcha()">Refresh CAPTCHA</div>
                 </div>
             </div>
             
@@ -271,6 +323,17 @@
                 strengthMeter.style.backgroundColor = '#4CAF50';
             }
         });
+
+        // CAPTCHA refresh function
+        function refreshCaptcha() {
+            fetch('/captcha/refresh')
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector('.captcha-image').src = data.imagePath;
+                    document.querySelector('input[name="captchaId"]').value = data.id;
+                })
+                .catch(error => console.error('Error refreshing CAPTCHA:', error));
+        }
     </script>
 </body>
 </html>

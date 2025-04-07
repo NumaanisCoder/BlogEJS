@@ -6,7 +6,7 @@
   <title><%= blog.title %> | BlogApp</title>
   <style>
     :root {
-      --primary-color: #4a6bff;
+      --primary-color: #FF6201;
       --text-color: #333;
       --light-text: #777;
       --border-radius: 8px;
@@ -104,8 +104,9 @@
     }
     
     .btn-delete {
-      background-color: #ff4444;
+      background-color: red;
       color: white;
+      border: none;
     }
     
     .btn:hover {
@@ -152,9 +153,9 @@
     
     <% if (isAuthenticated && user.id === blog.user.id) { %>
       <div class="actions">
-        <a href="/blog/<%= blog.id %>/edit" class="btn btn-edit">Edit</a>
-        <form action="/blog/<%= blog.id %>?_method=DELETE" method="POST" style="display: inline;">
-          <input type="hidden" name="_csrf" value="<%= locals.csrfToken %>">
+     
+        <form action="/user/blogs/<%= blog.id %>?_method=DELETE" method="POST" style="display: inline;">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button type="submit" class="btn btn-delete">Delete</button>
         </form>
       </div>

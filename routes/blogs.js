@@ -3,6 +3,10 @@ const { PrismaClient } = require("@prisma/client");
 const router = express.Router();
 const prisma = new PrismaClient();
 
+
+const csrf = require("csurf");
+const csrfProtection = csrf({ cookie: true });
+
 // Middleware to Check Authentication
 const isAuthenticated = (req, res, next) => {
   if (!req.session.user) return res.redirect("/user/login");
@@ -68,7 +72,7 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id",csrfProtection, async (req, res) => {
   try {
     const blog = await prisma.blog.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -87,7 +91,8 @@ router.get("/:id", async (req, res) => {
       return res.status(404).render('error', { 
         error: 'Blog not found',
         isAuthenticated: !!req.session.user,
-        user: req.session.user
+        user: req.session.user,
+        csrfToken : req.csrfToken()
       });
     }
 
@@ -95,7 +100,8 @@ router.get("/:id", async (req, res) => {
       title: blog.title,
       blog,
       isAuthenticated: !!req.session.user,
-      user: req.session.user
+      user: req.session.user,
+      csrfToken : req.csrfToken()
     });
   } catch (error) {
     console.error("Error fetching blog:", error);
