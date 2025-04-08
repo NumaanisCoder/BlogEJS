@@ -7,6 +7,7 @@ const session = require("express-session");
 const path = require("path");
 const csrf = require('csurf');
 const methodOverride = require('method-override');
+const jwt = require("jsonwebtoken");
 
 
 const app = express();
@@ -14,10 +15,18 @@ const prismaClient = new prisma();
 const csrfProtection = csrf({ cookie: true });
 
 // Middleware
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cookieParser());
-app.use(session({ secret: "mykey", resave: false, saveUninitialized: true }));
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production'
+    }
+}));
 app.use(csrfProtection); 
 app.use((req, res, next) => {
     if (["POST", "PUT", "DELETE"].includes(req.method)) {

@@ -4,16 +4,19 @@ const { PrismaClient } = require("@prisma/client");
 const session = require("express-session");
 const csrf = require("csurf");
 const { generateCaptcha, verifyCaptcha } = require("../util/captcha");
+const { generateToken } = require("../util/auth");
+const { authenticateJWT } = require("../middleware/auth");
 const csrfProtection = csrf({ cookie: true });
 const router = express.Router();
 const prisma = new PrismaClient();
 
 
+router.use(authenticateJWT);
 // Middleware to Check Authentication
 const isAuthenticated = (req, res, next) => {
-    if (!req.session.user) return res.redirect("/user/login");
+    if (!req.session.user && !req.user) return res.redirect("/user/login");
     next();
-};
+  };
 
 // ✅ Register Route
 router.get("/user/register", csrfProtection, (req, res) => {
@@ -102,7 +105,7 @@ router.get("/user/login",csrfProtection, (req, res) => {
 });
 
 router.post("/user/login", csrfProtection, async (req, res) => {
-    const { email, password, captchaInput, captchaId } = req.body;
+    const { email, password, captchaInput, captchaId, rememberMe } = req.body;
     console.log(req.body);
     
     if (!verifyCaptcha(captchaId, captchaInput)) {
@@ -145,11 +148,29 @@ router.post("/user/login", csrfProtection, async (req, res) => {
                 captchaImage: newCaptcha.imageUrl
             });
         }
+   // Generate JWT token
+   const token = generateToken(user.id);
 
-        req.session.user = user;
-        req.session.user = user;
-        req.session.pinVerified = false; // Reset PIN verification
-        res.redirect("/user/login/pin"); 
+   // Set cookie with token
+   const cookieOptions = {
+       httpOnly: true,
+       secure: process.env.NODE_ENV === 'production',
+       sameSite: 'strict'
+   };
+
+   if (rememberMe === 'on') {
+       cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+   }
+
+   res.cookie('jwt', token, cookieOptions);
+
+   // Store user in session
+   req.session.user = user;
+   req.session.pinVerified = false;
+
+   res.redirect("/user/login/pin");
+
+       
 
     } catch (error) {
         console.error("Login error:", error);
@@ -218,6 +239,7 @@ router.post("/user/blogs", isAuthenticated, async (req, res) => {
 
 // ✅ Logout
 router.get("/user/logout", (req, res) => {
+    res.clearCookie('jwt');
     req.session.destroy((err) => {
         if (err) {
             console.error("Logout error:", err);
