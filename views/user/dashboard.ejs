@@ -57,6 +57,10 @@
       color: var(--error-color);
       border-left: 4px solid var(--error-color);
     }
+    .blog-image{
+      width: 100px;
+      object-fit: contain;
+    }
     
     .blog-form {
       background: white;
@@ -204,7 +208,7 @@
         
         <div class="form-group">
           <label for="imageUrl">Image URL (optional)</label>
-          <input type="url" id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg">
+          <input type="url" id="imageUrl" name="image_link" placeholder="https://example.com/image.jpg">
         </div>
         
         <div class="form-group">
@@ -229,12 +233,12 @@
           <article class="blog-item" id="blog-<%= blog.id %>">
             <h3><%= blog.title %></h3>
             
-            <% if (blog.imageUrl) { %>
-              <img src="<%= blog.imageUrl %>" alt="Blog image" class="blog-image">
+            <% if (blog.image_link) { %>
+              <img src="<%= blog.image_link %>" alt="Blog image" class="blog-image">
             <% } %>
             
             <p><%= blog.content %></p>
-            <p class="blog-date">Posted on: <%= new Date(blog.createdAt).toLocaleDateString('en-US', { 
+            <p class="blog-date">Posted on: <%= new Date(blog.datetime).toLocaleDateString('en-US', { 
               year: 'numeric', 
               month: 'long', 
               day: 'numeric',
@@ -242,7 +246,7 @@
               minute: '2-digit'
             }) %></p>
             
-            <form action="/user/blogs/<%= blog.id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this blog post?')">
+            <form action="/user/blogs/<%= blog.Post_id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this blog post?')">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn delete-btn">Delete Post</button>
             </form>

@@ -136,14 +136,14 @@
     <header class="blog-header">
       <h1 class="blog-title"><%= blog.title %></h1>
       <div class="blog-meta">
-        <span class="blog-author">By <%= blog.user.name %></span>
-        <span><%= new Date(blog.createdAt).toLocaleDateString() %></span>
+        <span class="blog-author">By <%= blog.author.name %></span>
+        <span><%= new Date(blog.datetime).toLocaleDateString() %></span>
       </div>
     </header>
 
-    <% if (blog.imageUrl) { %>
+    <% if (blog.image_link) { %>
       <div class="blog-image-container">
-        <img src="<%= blog.imageUrl %>" alt="<%= blog.title %>" class="blog-image">
+        <img src="<%= blog.image_link %>" alt="<%= blog.title %>" class="blog-image">
       </div>
     <% } %>
     
@@ -151,10 +151,10 @@
       <%= blog.content %>
     </div>
     
-    <% if (isAuthenticated && user.id === blog.user.id) { %>
+    <% if (isAuthenticated && user.user_id === blog.userId) { %>
       <div class="actions">
      
-        <form action="/user/blogs/<%= blog.id %>?_method=DELETE" method="POST" style="display: inline;">
+        <form action="/user/blogs/<%= blog.Post_id %>?_method=DELETE" method="POST" style="display: inline;">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button type="submit" class="btn btn-delete">Delete</button>
         </form>

@@ -3,7 +3,6 @@ const { PrismaClient } = require("@prisma/client");
 const router = express.Router();
 const prisma = new PrismaClient();
 
-
 const csrf = require("csurf");
 const csrfProtection = csrf({ cookie: true });
 
@@ -16,14 +15,14 @@ const isAuthenticated = (req, res, next) => {
 // CREATE Blog (matches dashboard form)
 router.post("/", isAuthenticated, async (req, res) => {
   try {
-    const { title, imageUrl, content } = req.body;
+    const { title, image_link, content } = req.body;
     
-    await prisma.blog.create({
+    await prisma.post.create({
       data: {
         title,
-        imageUrl: imageUrl || null, // Handle empty image URL
+        image_link: image_link || null, // Handle empty image URL
         content,
-        userId: req.session.user.id
+        userId: req.session.user.user_id // Changed from id to user_id
       }
     });
     
@@ -38,9 +37,9 @@ router.post("/", isAuthenticated, async (req, res) => {
 // GET All Blogs for Current User
 router.get("/", isAuthenticated, async (req, res) => {
   try {
-    const blogs = await prisma.blog.findMany({
-      where: { userId: req.session.user.id },
-      orderBy: { createdAt: "desc" }
+    const blogs = await prisma.post.findMany({ // Changed from blog to post
+      where: { userId: req.session.user.user_id }, // Changed from id to user_id
+      orderBy: { datetime: "desc" } // Changed from createdAt to datetime
     });
     res.json(blogs); // For API calls
   } catch (error) {
@@ -53,16 +52,16 @@ router.get("/", isAuthenticated, async (req, res) => {
 router.delete("/:id", isAuthenticated, async (req, res) => {
   try {
     console.log('CSRF header:', req.headers['csrf-token']);
-    const blog = await prisma.blog.findUnique({
-      where: { id: parseInt(req.params.id) }
+    const blog = await prisma.post.findUnique({ // Changed from blog to post
+      where: { Post_id: parseInt(req.params.id) } // Changed from id to Post_id
     });
 
-    if (!blog || blog.userId !== req.session.user.id) {
+    if (!blog || blog.userId !== req.session.user.user_id) { // Changed from id to user_id
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    await prisma.blog.delete({
-      where: { id: parseInt(req.params.id) }
+    await prisma.post.delete({ // Changed from blog to post
+      where: { Post_id: parseInt(req.params.id) } // Changed from id to Post_id
     });
     
     res.redirect("/user/dashboard");
@@ -72,14 +71,14 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/:id",csrfProtection, async (req, res) => {
+router.get("/:id", csrfProtection, async (req, res) => {
   try {
-    const blog = await prisma.blog.findUnique({
-      where: { id: parseInt(req.params.id) },
+    const blog = await prisma.post.findUnique({ // Changed from blog to post
+      where: { Post_id: parseInt(req.params.id) }, // Changed from id to Post_id
       include: {
-        user: {
+        author: { // Changed from user to author
           select: {
-            id: true,
+            user_id: true, // Changed from id to user_id
             name: true,
             email: true
           }
@@ -92,16 +91,18 @@ router.get("/:id",csrfProtection, async (req, res) => {
         error: 'Blog not found',
         isAuthenticated: !!req.session.user,
         user: req.session.user,
-        csrfToken : req.csrfToken()
+        csrfToken: req.csrfToken()
       });
     }
+    console.log(req.session.user);
+    console.log(blog);
 
     res.render('blog/single', { 
       title: blog.title,
       blog,
       isAuthenticated: !!req.session.user,
       user: req.session.user,
-      csrfToken : req.csrfToken()
+      csrfToken: req.csrfToken()
     });
   } catch (error) {
     console.error("Error fetching blog:", error);

@@ -10,13 +10,13 @@ const csrfProtection = csrf({ cookie: true });
 const router = express.Router();
 const prisma = new PrismaClient();
 
-
 router.use(authenticateJWT);
+
 // Middleware to Check Authentication
 const isAuthenticated = (req, res, next) => {
     if (!req.session.user && !req.user) return res.redirect("/user/login");
     next();
-  };
+};
 
 // ✅ Register Route
 router.get("/user/register", csrfProtection, (req, res) => {
@@ -29,7 +29,7 @@ router.get("/user/register", csrfProtection, (req, res) => {
         csrfToken: req.csrfToken(),
         captchaId: captcha.id,
         captchaImage: captcha.imageUrl,
-        formData:null
+        formData: null
     });
 });
 
@@ -91,7 +91,7 @@ router.post("/user/register", csrfProtection, async (req, res) => {
 });
 
 // ✅ Login Route
-router.get("/user/login",csrfProtection, (req, res) => {
+router.get("/user/login", csrfProtection, (req, res) => {
     const captcha = generateCaptcha();
     
     res.render("user/login", { 
@@ -106,12 +106,11 @@ router.get("/user/login",csrfProtection, (req, res) => {
 
 router.post("/user/login", csrfProtection, async (req, res) => {
     const { email, password, captchaInput, captchaId, rememberMe } = req.body;
-    console.log(req.body);
     
     if (!verifyCaptcha(captchaId, captchaInput)) {
         const newCaptcha = generateCaptcha();
         return res.render("user/login", {
-            csrfToken: req.csrfToken(), // Add this line
+            csrfToken: req.csrfToken(),
             message: "CAPTCHA verification failed",
             captchaId: newCaptcha.id,
             captchaImage: newCaptcha.imageUrl,
@@ -125,7 +124,7 @@ router.post("/user/login", csrfProtection, async (req, res) => {
         if (!user) {
             const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
-                csrfToken: req.csrfToken(), // Add this line
+                csrfToken: req.csrfToken(),
                 message: "Invalid credentials",
                 formData: req.body,
                 isAuthenticated: !!req.session.user,
@@ -139,7 +138,7 @@ router.post("/user/login", csrfProtection, async (req, res) => {
         if (!isMatch) {
             const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
-                csrfToken: req.csrfToken(), // Add this line
+                csrfToken: req.csrfToken(),
                 message: "Invalid credentials",
                 formData: req.body,
                 isAuthenticated: !!req.session.user,
@@ -148,35 +147,34 @@ router.post("/user/login", csrfProtection, async (req, res) => {
                 captchaImage: newCaptcha.imageUrl
             });
         }
-   // Generate JWT token
-   const token = generateToken(user.id);
 
-   // Set cookie with token
-   const cookieOptions = {
-       httpOnly: true,
-       secure: process.env.NODE_ENV === 'production',
-       sameSite: 'strict'
-   };
+        // Generate JWT token
+        const token = generateToken(user.user_id);
 
-   if (rememberMe === 'on') {
-       cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-   }
+        // Set cookie with token
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        };
 
-   res.cookie('jwt', token, cookieOptions);
+        if (rememberMe === 'on') {
+            cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        }
 
-   // Store user in session
-   req.session.user = user;
-   req.session.pinVerified = false;
+        res.cookie('jwt', token, cookieOptions);
 
-   res.redirect("/user/login/pin");
+        // Store user in session
+        req.session.user = user;
+        req.session.pinVerified = false;
 
-       
+        res.redirect("/user/login/pin");
 
     } catch (error) {
         console.error("Login error:", error);
         const newCaptcha = generateCaptcha();
         res.render("user/login", { 
-            csrfToken: req.csrfToken(), // Add this line
+            csrfToken: req.csrfToken(),
             message: "Login failed. Please try again.",
             formData: req.body,
             isAuthenticated: !!req.session.user,
@@ -188,19 +186,18 @@ router.post("/user/login", csrfProtection, async (req, res) => {
 });
 
 // ✅ Dashboard (Authenticated)
-router.get("/user/dashboard", isAuthenticated, csrfProtection,async (req, res) => {
+router.get("/user/dashboard", isAuthenticated, csrfProtection, async (req, res) => {
     try {
         const user = req.session.user;
-        const blogs = await prisma.blog.findMany({ 
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' }
+        const blogs = await prisma.post.findMany({ 
+            where: { userId: user.user_id },
+            orderBy: { datetime: 'desc' }
         });
 
         // Get error from session if exists
         const error = req.session.error;
         // Clear the error after retrieving it
         req.session.error = null;
-
         res.render("user/dashboard", { 
             user, 
             blogs,
@@ -217,16 +214,16 @@ router.get("/user/dashboard", isAuthenticated, csrfProtection,async (req, res) =
 
 // ✅ Create Blog (Authenticated)
 router.post("/user/blogs", isAuthenticated, async (req, res) => {
-    const { title, imageUrl, content } = req.body;
+    const { title, image_link, content } = req.body;
     const user = req.session.user;
 
     try {
-        await prisma.blog.create({
+        await prisma.post.create({
             data: { 
                 title, 
-                imageUrl, 
+                image_link, 
                 content, 
-                userId: user.id 
+                userId: user.user_id 
             },
         });
         res.redirect("/user/dashboard");
@@ -251,10 +248,10 @@ router.get("/user/logout", (req, res) => {
 // ✅ Homepage Route
 router.get("/", async (req, res) => {
     try {
-        const blogs = await prisma.blog.findMany({
-            orderBy: { createdAt: 'desc' },
+        const blogs = await prisma.post.findMany({
+            orderBy: { datetime: 'desc' },
             include: {
-                user: {
+                author: {
                     select: {
                         name: true,
                         email: true
@@ -268,7 +265,7 @@ router.get("/", async (req, res) => {
             isAuthenticated: !!req.session.user,
             title: "Home",
             user: req.session.user || null,
-            error:""
+            error: ""
         });
     } catch (error) {
         console.error("Homepage error:", error);
@@ -294,28 +291,27 @@ router.get('/captcha/refresh', csrfProtection, (req, res) => {
     }
 });
 
-router.get('/user/login/pin',isAuthenticated, csrfProtection, (req,res)=>{
+router.get('/user/login/pin', isAuthenticated, csrfProtection, (req, res) => {
     if (req.session.pinVerified) {
         return res.redirect("/user/dashboard");
     }
 
-    res.render('pin',{
+    res.render('pin', {
         csrfToken: req.csrfToken(),
         title: "PIN",
         isAuthenticated: true,
-        message:""
-    })
-})
+        message: ""
+    });
+});
 
 router.post("/user/verify-pin", isAuthenticated, csrfProtection, async (req, res) => {
     const { pin } = req.body;
     const user = req.session.user;
 
     try {
-      if(!user){
-        res.redirect('user/login');
-      }
-    
+        if (!user) {
+            res.redirect('user/login');
+        }
 
         // Mark PIN as verified in session
         req.session.pinVerified = true;

@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-very-secure-secret-key';
 const JWT_EXPIRES_IN = '30d';
 
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, JWT_SECRET, {
+const generateToken = (user_id) => {
+  return jwt.sign({ user_id: user_id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   });
 };
