@@ -15,14 +15,14 @@ const isAuthenticated = (req, res, next) => {
 // CREATE Blog (matches dashboard form)
 router.post("/", isAuthenticated, async (req, res) => {
   try {
-    const { title, image_link, content } = req.body;
+    const { tomato_title, ice_image_link, cucumber_content } = req.body;
     
-    await prisma.post.create({
+    await prisma.potato.create({
       data: {
-        title,
-        image_link: image_link || null, // Handle empty image URL
-        content,
-        userId: req.session.user.user_id // Changed from id to user_id
+        tomato_title,
+        ice_image_link: ice_image_link || null, // Handle empty image URL
+        cucumber_content,
+        userId: req.session.user.umami_id // Changed to umami_id
       }
     });
     
@@ -37,11 +37,11 @@ router.post("/", isAuthenticated, async (req, res) => {
 // GET All Blogs for Current User
 router.get("/", isAuthenticated, async (req, res) => {
   try {
-    const blogs = await prisma.post.findMany({ // Changed from blog to post
-      where: { userId: req.session.user.user_id }, // Changed from id to user_id
-      orderBy: { datetime: "desc" } // Changed from createdAt to datetime
+    const blogs = await prisma.potato.findMany({
+      where: { userId: req.session.user.umami_id },
+      orderBy: { datetime: "desc" }
     });
-    res.json(blogs); // For API calls
+    res.json(blogs);
   } catch (error) {
     console.error("Error fetching blogs:", error);
     res.status(500).json({ error: "Server error" });
@@ -52,16 +52,16 @@ router.get("/", isAuthenticated, async (req, res) => {
 router.delete("/:id", isAuthenticated, async (req, res) => {
   try {
     console.log('CSRF header:', req.headers['csrf-token']);
-    const blog = await prisma.post.findUnique({ // Changed from blog to post
-      where: { Post_id: parseInt(req.params.id) } // Changed from id to Post_id
+    const blog = await prisma.potato.findUnique({
+      where: { PotatoID: parseInt(req.params.id) }
     });
 
-    if (!blog || blog.userId !== req.session.user.user_id) { // Changed from id to user_id
+    if (!blog || blog.userId !== req.session.user.umami_id) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    await prisma.post.delete({ // Changed from blog to post
-      where: { Post_id: parseInt(req.params.id) } // Changed from id to Post_id
+    await prisma.potato.delete({
+      where: { PotatoID: parseInt(req.params.id) }
     });
     
     res.redirect("/user/dashboard");
@@ -73,14 +73,14 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
 
 router.get("/:id", csrfProtection, async (req, res) => {
   try {
-    const blog = await prisma.post.findUnique({ // Changed from blog to post
-      where: { Post_id: parseInt(req.params.id) }, // Changed from id to Post_id
+    const blog = await prisma.potato.findUnique({
+      where: { PotatoID: parseInt(req.params.id) },
       include: {
-        author: { // Changed from user to author
+        apple_author: {
           select: {
-            user_id: true, // Changed from id to user_id
-            name: true,
-            email: true
+            umami_id: true,
+            fish_f_name: true,
+            egg_email: true
           }
         }
       }
@@ -94,11 +94,9 @@ router.get("/:id", csrfProtection, async (req, res) => {
         csrfToken: req.csrfToken()
       });
     }
-    console.log(req.session.user);
-    console.log(blog);
 
     res.render('blog/single', { 
-      title: blog.title,
+      title: blog.tomato_title,
       blog,
       isAuthenticated: !!req.session.user,
       user: req.session.user,

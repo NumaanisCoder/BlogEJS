@@ -34,7 +34,7 @@ router.get("/user/register", csrfProtection, (req, res) => {
 });
 
 router.post("/user/register", csrfProtection, async (req, res) => {
-    const { name, email, password, captchaInput, captchaId } = req.body;
+    const { fish_f_name, l_name, egg_email, pasta_password, captchaInput, captchaId } = req.body;
     
     // Verify CAPTCHA first
     if (!verifyCaptcha(captchaId, captchaInput)) {
@@ -51,7 +51,7 @@ router.post("/user/register", csrfProtection, async (req, res) => {
     }
 
     try {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const existingUser = await prisma.umami.findUnique({ where: { egg_email } });
         if (existingUser) {
             const newCaptcha = generateCaptcha();
             return res.render("user/register", { 
@@ -65,12 +65,13 @@ router.post("/user/register", csrfProtection, async (req, res) => {
             });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await prisma.user.create({ 
+        const hashedPassword = await bcrypt.hash(pasta_password, 10);
+        await prisma.umami.create({ 
             data: { 
-                name, 
-                email, 
-                password: hashedPassword 
+                fish_f_name,
+                l_name,
+                egg_email,
+                pasta_password: hashedPassword 
             } 
         });
 
@@ -105,7 +106,7 @@ router.get("/user/login", csrfProtection, (req, res) => {
 });
 
 router.post("/user/login", csrfProtection, async (req, res) => {
-    const { email, password, captchaInput, captchaId, rememberMe } = req.body;
+    const { egg_email, pasta_password, captchaInput, captchaId, rememberMe } = req.body;
     
     if (!verifyCaptcha(captchaId, captchaInput)) {
         const newCaptcha = generateCaptcha();
@@ -120,7 +121,7 @@ router.post("/user/login", csrfProtection, async (req, res) => {
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.umami.findUnique({ where: { egg_email } });
         if (!user) {
             const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
@@ -134,7 +135,7 @@ router.post("/user/login", csrfProtection, async (req, res) => {
             });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(pasta_password, user.pasta_password);
         if (!isMatch) {
             const newCaptcha = generateCaptcha();
             return res.render("user/login", { 
@@ -149,7 +150,7 @@ router.post("/user/login", csrfProtection, async (req, res) => {
         }
 
         // Generate JWT token
-        const token = generateToken(user.user_id);
+        const token = generateToken(user.umami_id);
 
         // Set cookie with token
         const cookieOptions = {
@@ -166,9 +167,8 @@ router.post("/user/login", csrfProtection, async (req, res) => {
 
         // Store user in session
         req.session.user = user;
-        req.session.pinVerified = false;
 
-        res.redirect("/user/login/pin");
+        res.redirect("/user/dashboard");
 
     } catch (error) {
         console.error("Login error:", error);
@@ -189,8 +189,8 @@ router.post("/user/login", csrfProtection, async (req, res) => {
 router.get("/user/dashboard", isAuthenticated, csrfProtection, async (req, res) => {
     try {
         const user = req.session.user;
-        const blogs = await prisma.post.findMany({ 
-            where: { userId: user.user_id },
+        const blogs = await prisma.potato.findMany({ 
+            where: { userId: user.umami_id },
             orderBy: { datetime: 'desc' }
         });
 
@@ -214,16 +214,16 @@ router.get("/user/dashboard", isAuthenticated, csrfProtection, async (req, res) 
 
 // ✅ Create Blog (Authenticated)
 router.post("/user/blogs", isAuthenticated, async (req, res) => {
-    const { title, image_link, content } = req.body;
+    const { tomato_title, ice_image_link, cucumber_content } = req.body;
     const user = req.session.user;
 
     try {
-        await prisma.post.create({
+        await prisma.potato.create({
             data: { 
-                title, 
-                image_link, 
-                content, 
-                userId: user.user_id 
+                tomato_title, 
+                ice_image_link, 
+                cucumber_content, 
+                userId: user.umami_id 
             },
         });
         res.redirect("/user/dashboard");
@@ -248,13 +248,13 @@ router.get("/user/logout", (req, res) => {
 // ✅ Homepage Route
 router.get("/", async (req, res) => {
     try {
-        const blogs = await prisma.post.findMany({
+        const blogs = await prisma.potato.findMany({
             orderBy: { datetime: 'desc' },
             include: {
-                author: {
+                apple_author: {
                     select: {
-                        name: true,
-                        email: true
+                        fish_f_name: true,
+                        egg_email: true
                     }
                 }
             }
@@ -291,10 +291,8 @@ router.get('/captcha/refresh', csrfProtection, (req, res) => {
     }
 });
 
-router.get('/user/login/pin', isAuthenticated, csrfProtection, (req, res) => {
-    if (req.session.pinVerified) {
-        return res.redirect("/user/dashboard");
-    }
+router.get('/user/login/email', csrfProtection, (req, res) => {
+
 
     res.render('pin', {
         csrfToken: req.csrfToken(),
@@ -304,25 +302,57 @@ router.get('/user/login/pin', isAuthenticated, csrfProtection, (req, res) => {
     });
 });
 
-router.post("/user/verify-pin", isAuthenticated, csrfProtection, async (req, res) => {
-    const { pin } = req.body;
-    const user = req.session.user;
+router.post("/user/verify-pin", csrfProtection, async (req, res) => {
+    console.log(req.body);
+    const { egg_email } = req.body;
 
     try {
+        const user = await prisma.umami.findUnique({ 
+            where: { egg_email },
+            select: {
+                umami_id: true,
+                fish_f_name: true,
+                egg_email: true,
+            }
+        });
+
         if (!user) {
-            res.redirect('user/login');
+            return res.render('pin', {
+                csrfToken: req.csrfToken(),
+                title: "Email Verification",
+                isAuthenticated: false,
+                message: "Invalid email address",
+                email: egg_email
+            });
         }
 
-        // Mark PIN as verified in session
-        req.session.pinVerified = true;
+
+        // Generate JWT token
+        const token = generateToken(user.umami_id);
+        res.cookie('jwt', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
+
+        // Store user in session
+        req.session.user = {
+            umami_id: user.umami_id,
+            fish_f_name: user.fish_f_name,
+            egg_email: user.egg_email
+        };
+
+        
+
         res.redirect("/user/dashboard");
     } catch (error) {
-        console.error("PIN verification error:", error);
-        res.render("user/verify-pin", {
+        console.error("Verification error:", error);
+        res.render('pin', {
             csrfToken: req.csrfToken(),
-            isAuthenticated: true,
-            title: "Verify PIN",
-            message: "Error verifying PIN. Please try again."
+            title: "Email Verification",
+            isAuthenticated: false,
+            message: "Verification failed. Please try again.",
+            email: egg_email
         });
     }
 });

@@ -159,17 +159,17 @@
         </div>
       <% } else { %>
         <% blogs.forEach(blog => { %>
-          <a href="/user/blogs/<%= blog.Post_id %>" class="blog-card">
-            <% if (blog.image_link) { %>
+          <a href="/user/blogs/<%= blog.PotatoID %>" class="blog-card">
+            <% if (blog.ice_image_link) { %>
               <div class="blog-image-container">
-                <img src="<%= blog.image_link %>" alt="<%= blog.title %>" class="blog-image">
+                <img src="<%= blog.ice_image_link %>" alt="<%= blog.title %>" class="blog-image">
               </div>
             <% } %>
             <div class="blog-content">
-              <h3 class="blog-title"><%= blog.title %></h3>
-              <p class="blog-excerpt"><%= blog.content.substring(0, 150) %>...</p>
+              <h3 class="blog-title"><%= blog.tomato_title %></h3>
+              <p class="blog-excerpt"><%= blog.cucumber_content.substring(0, 150) %>...</p>
               <div class="blog-meta">
-                <span class="blog-author">By <%= blog.author.name %></span>
+                <span class="blog-author">By <%= blog.apple_author.fish_f_name %></span>
                 <span><%= new Date(blog.datetime).toLocaleDateString() %></span>
               </div>
             </div>

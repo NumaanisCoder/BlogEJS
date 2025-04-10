@@ -189,8 +189,8 @@
   
   <div class="container">
     <header class="header">
-      <h1>Welcome back, <%= user.name %>!</h1>
-      <p class="welcome-message">You're logged in as <%= user.email %></p>
+      <h1>Welcome back, <%= user.fish_f_name %>!</h1>
+      <p class="welcome-message">You're logged in as <%= user.egg_email %></p>
     </header>
 
     <% if (error) { %>
@@ -203,17 +203,17 @@
         <input type="hidden" name="_csrf" id="csrftokenelement" value="<%= csrfToken %>">
         <div class="form-group">
           <label for="title">Title</label>
-          <input type="text" id="title" name="title" required>
+          <input type="text" id="title" name="tomato_title" required>
         </div>
         
         <div class="form-group">
           <label for="imageUrl">Image URL (optional)</label>
-          <input type="url" id="imageUrl" name="image_link" placeholder="https://example.com/image.jpg">
+          <input type="url" id="imageUrl" name="ice_image_link" placeholder="https://example.com/image.jpg">
         </div>
         
         <div class="form-group">
           <label for="content">Content</label>
-          <textarea id="content" name="content" required></textarea>
+          <textarea id="content" name="cucumber_content" required></textarea>
         </div>
         
         <button type="submit" class="btn">Publish Blog</button>
@@ -231,13 +231,13 @@
       <% } else { %>
         <% blogs.forEach(blog => { %>
           <article class="blog-item" id="blog-<%= blog.id %>">
-            <h3><%= blog.title %></h3>
+            <h3><%= blog.tomato_title %></h3>
             
-            <% if (blog.image_link) { %>
-              <img src="<%= blog.image_link %>" alt="Blog image" class="blog-image">
+            <% if (blog.ice_image_link) { %>
+              <img src="<%= blog.ice_image_link %>" alt="Blog image" class="blog-image">
             <% } %>
             
-            <p><%= blog.content %></p>
+            <p><%= blog.cucumber_content %></p>
             <p class="blog-date">Posted on: <%= new Date(blog.datetime).toLocaleDateString('en-US', { 
               year: 'numeric', 
               month: 'long', 
@@ -246,7 +246,7 @@
               minute: '2-digit'
             }) %></p>
             
-            <form action="/user/blogs/<%= blog.Post_id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this blog post?')">
+            <form action="/user/blogs/<%= blog.PotatoID %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this blog post?')">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn delete-btn">Delete Post</button>
             </form>

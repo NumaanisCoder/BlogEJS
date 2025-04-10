@@ -7,23 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  user_id    Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  password   String
-  createdAt  DateTime @default(now())
+model Umami {
+  umami_id      Int      @id @default(autoincrement())
+  fish_f_name   String
+  l_name        String
+  egg_email     String   @unique
+  pasta_password String
+  createdAt     DateTime @default(now())
 
-  blogs      Post[]   // One user can have multiple blogs
+  blogs         Potato[]   // One user can have multiple blogs
 }
 
-model Post {
-  Post_id    Int      @id @default(autoincrement()) 
-  title      String
-  image_link String?
-  content    String
-  datetime   DateTime @default(now())
+model Potato {
+  PotatoID        Int      @id @default(autoincrement()) 
+  tomato_title    String
+  ice_image_link  String?
+  cucumber_content String
+  datetime       DateTime @default(now())
 
-  userId     Int
-  author     User     @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+  userId         Int
+  apple_author   Umami    @relation(fields: [userId], references: [umami_id], onDelete: Cascade)
 }
